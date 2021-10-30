@@ -1,6 +1,27 @@
 {
   "name": "rab-slack-bot",
   "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT"
+  "main": "lib/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "nodemon src/index.ts",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "start": "node lib/index.js"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.2.0",
+    "@typescript-eslint/parser": "^5.2.0",
+    "eslint": "^5.16.0 || ^6.8.0 || ^7.2.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "nodemon": "^2.0.14",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@slack/socket-mode": "^1.2.0",
+    "@slack/web-api": "^6.4.0"
+  }
 }
