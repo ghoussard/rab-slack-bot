@@ -1,4 +1,4 @@
-name: RAB Slack Bot CI
+name: CI
 
 on:
   push:
