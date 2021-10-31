@@ -38,7 +38,7 @@ const startHttpServer = async (port: number) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(slackClientHealthcheck));
   }).listen(port);
-  console.info('HTTP server listening on port 3000');
+  console.info(`HTTP server listening on port ${port}`);
 };
 
 export default startHttpServer;
