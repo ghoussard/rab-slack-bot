@@ -28,6 +28,9 @@ jobs:
         cache: 'yarn'
         cache-dependency-path: 'yarn.lock'
 
+    - name: Install dependencies
+      run: yarn install
+
     - name: Check lint
       run: yarn lint
 
