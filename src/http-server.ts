@@ -1,8 +1,9 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { slackClientEventEmitter, SlackClientLifecycleEventName } from './slack-client';
+import { env } from 'process';
+import { SlackClientLifecycleEvent, slackClientEventEmitter, SLACK_CLIENT_EVENT_EMITTER_LIFECYCLE_EVENT } from './slack/slack-client-event-emitter';
 
 type SlackClientHealthcheckStatus = {
-  name: SlackClientLifecycleEventName;
+  name: SlackClientLifecycleEvent;
   timestamp: number;
 };
 
@@ -11,29 +12,28 @@ type SlackClientHealthcheck = {
   history: SlackClientHealthcheckStatus[]
 };
 
-const getCurrentTimestamp = (): number => Math.floor(Date.now() / 1000);
-
 let slackClientHealthcheck: SlackClientHealthcheck = {
   currentStatus: null,
   history: [],
 };
 
-const updateSlackClientHealthcheck = (newStatusName: SlackClientLifecycleEventName): void => {
+const updateSlackClientHealthcheck = (newStatusName: SlackClientLifecycleEvent): void => {
   const newHistory = slackClientHealthcheck.currentStatus !== null
     ? [...slackClientHealthcheck.history, slackClientHealthcheck.currentStatus] : [];
 
   slackClientHealthcheck = {
     currentStatus: {
       name: newStatusName,
-      timestamp: getCurrentTimestamp(),
+      timestamp: (new Date()).getTime(),
     },
     history: newHistory,
   };
 };
 
-slackClientEventEmitter.on('lifecycle_event', (lifecycleEventName: SlackClientLifecycleEventName): void => updateSlackClientHealthcheck(lifecycleEventName));
+slackClientEventEmitter.on(SLACK_CLIENT_EVENT_EMITTER_LIFECYCLE_EVENT, (lifecycleEvent: SlackClientLifecycleEvent): void => updateSlackClientHealthcheck(lifecycleEvent));
 
-const startHttpServer = async (port: number) => {
+const startHttpServer = async () => {
+  const port: number = env.PORT !== undefined ? parseInt(env.PORT, 10) : 3000;
   createServer((req: IncomingMessage, res: ServerResponse) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(slackClientHealthcheck));
@@ -41,4 +41,6 @@ const startHttpServer = async (port: number) => {
   console.info(`HTTP server listening on port ${port}`);
 };
 
-export default startHttpServer;
+export {
+  startHttpServer,
+};
