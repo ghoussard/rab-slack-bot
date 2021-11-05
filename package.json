@@ -1,14 +1,14 @@
 {
   "name": "rab-slack-bot",
   "version": "1.0.0",
-  "main": "lib/index.js",
+  "main": "lib/bot.js",
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon src/index.ts",
+    "dev": "nodemon src/bot.ts",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "start": "node lib/index.js"
+    "start": "node lib/bot.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.2.0",
@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@slack/socket-mode": "^1.2.0",
-    "@slack/web-api": "^6.4.0"
+    "@slack/web-api": "^6.4.0",
+    "axios": "^0.24.0"
   }
 }
