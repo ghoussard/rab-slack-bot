@@ -1,5 +1,8 @@
 import { env } from 'process';
 import {
+  createServer, IncomingMessage, ServerResponse,
+} from 'http';
+import {
   App, AppOptions, SectionBlock, RespondArguments,
 } from '@slack/bolt';
 import {
@@ -91,12 +94,21 @@ app.command('/rab-wallet', async ({ command, ack, respond }) => {
 });
 
 const startApp = async (): Promise<void> => {
-  console.log('Starting app');
+  console.log(`Starting app with ${useSocketMode ? 'socket' : 'http'}`);
 
   const port: number = env.PORT ? parseInt(env.PORT, 10) : 3000;
-  await app.start(port);
 
-  console.log(`⚡️ Bolt app is running on port ${port}!`);
+  if (useSocketMode) {
+    await app.start();
+    createServer((req: IncomingMessage, res: ServerResponse) => {
+      res.writeHead(200);
+      res.end();
+    }).listen(port);
+    console.log(`⚡️ Bolt app is running and dummy http server listening on port ${port}!`);
+  } else {
+    await app.start(port);
+    console.log(`⚡️ Bolt app is running on port ${port}!`);
+  }
 };
 
 export {
