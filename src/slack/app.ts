@@ -5,14 +5,15 @@ import {
 import {
   App, AppOptions, SectionBlock, RespondArguments,
 } from '@slack/bolt';
+import { ChatPostMessageArguments } from '@slack/web-api';
 import {
   AggregatedExchangeWallet, CryptoCurrency, ExchangeWallet, getAggregatedExchangeWallet,
 } from '../exchanges/aggregator';
 
-const rabMembersSlackHandles: string[] = JSON.parse(env.RAB_MEMBERS_SLACK_HANDLES || '[]');
-const userIsGranted = (user: string): boolean => rabMembersSlackHandles.includes(user);
+const rabMembersHandles: string[] = JSON.parse(env.SLACK_RAB_MEMBERS_HANDLES || '[]');
+const userIsGranted = (user: string): boolean => rabMembersHandles.includes(user);
 
-const getRabWalletResponse = async (): Promise<RespondArguments> => {
+const getAggregatedWalletRespondArguments = async (): Promise<RespondArguments> => {
   const {
     fiatValue,
     fiatCurrency,
@@ -86,15 +87,15 @@ app.command('/rab-wallet', async ({ command, ack, respond }) => {
   await ack();
 
   if (userIsGranted(command.user_name)) {
-    const response: RespondArguments = await getRabWalletResponse();
-    await respond(response);
+    const aggregatedWallet: RespondArguments = await getAggregatedWalletRespondArguments();
+    await respond(aggregatedWallet);
   } else {
     await respond('Sorry, only RAB members have access to RAB fund wallet!');
   }
 });
 
 const startApp = async (): Promise<void> => {
-  console.log(`Starting app with ${useSocketMode ? 'socket' : 'http'}`);
+  console.info(`Starting app with ${useSocketMode ? 'socket' : 'http'}`);
 
   const port: number = env.PORT ? parseInt(env.PORT, 10) : 3000;
 
@@ -104,13 +105,27 @@ const startApp = async (): Promise<void> => {
       res.writeHead(200);
       res.end();
     }).listen(port);
-    console.log(`⚡️ Bolt app is running and dummy http server listening on port ${port}!`);
+    console.info(`⚡️ Bolt app is running and dummy http server listening on port ${port}!`);
   } else {
     await app.start(port);
-    console.log(`⚡️ Bolt app is running on port ${port}!`);
+    console.info(`⚡️ Bolt app is running on port ${port}!`);
   }
 };
 
+const postAggregatedWalletInRabChannel = async (): Promise<void> => {
+  const channel: string = env.SLACK_RAB_CHANNEL || '';
+  const aggregatedWallet: RespondArguments = await getAggregatedWalletRespondArguments();
+
+  const message: ChatPostMessageArguments = {
+    channel,
+    text: 'RAB Fund Wallet',
+    ...aggregatedWallet,
+  };
+
+  await app.client.chat.postMessage(message);
+};
+
 export {
+  postAggregatedWalletInRabChannel,
   startApp,
 };
