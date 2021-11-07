@@ -2,7 +2,7 @@ import { env } from 'process';
 import { createHmac, Hmac } from 'crypto';
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios';
 
-type FtxApiMethod = 'GET';
+type ApiMethod = 'GET';
 
 const encryptString = (stringToEncrypt: string): string => {
     const apiSecret: string = env.FTX_API_SECRET || '';
@@ -11,7 +11,7 @@ const encryptString = (stringToEncrypt: string): string => {
     return hmac.digest('hex');
 }
 
-const constructHeaders = (path: string, method: FtxApiMethod): AxiosRequestHeaders => {
+const constructHeaders = (path: string, method: ApiMethod): AxiosRequestHeaders => {
     const apiKey: string = env.FTX_API_KEY || '';
     const timestamp = (new Date()).getTime();
     const signature = encryptString(`${timestamp}${method}${path}`);
@@ -29,7 +29,7 @@ const get = async (resource: string): Promise<any> => {
     const baseUrl: string = env.FTX_API_BASE_URL || '';
     const path = `/api/${resource}`;
     const url = `${baseUrl}${path}`;
-    const method: FtxApiMethod = 'GET';
+    const method: ApiMethod = 'GET';
     const headers: AxiosRequestHeaders = constructHeaders(path, method);
 
     const requestConfig: AxiosRequestConfig = {
@@ -50,20 +50,26 @@ const get = async (resource: string): Promise<any> => {
     }
 }
 
-type FtxWalletBalance = {
+type WalletBalance = {
     coin: string;
     total: number;
     usdValue: number;
 }
 
-const getFtxWalletBalances = (): Promise<FtxWalletBalance[]> => {
-    return get('wallet/balances');
+const getWalletBalances = async (): Promise<WalletBalance[]> => {
+    const rawWalletBalances: any = await get('wallet/balances');
+
+    const walletBalances: WalletBalance[] = rawWalletBalances
+        .filter(({ total }: any): any => total > 0)
+        .map(({ coin, total, usdValue }: any): WalletBalance => ({ coin, total, usdValue }));
+
+    return walletBalances;
 }
 
 export type {
-    FtxWalletBalance,
+    WalletBalance,
 }
 
 export {
-    getFtxWalletBalances,
+    getWalletBalances,
 }
