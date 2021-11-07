@@ -1,7 +1,5 @@
-import { startHttpServer } from './http-server';
-import { startSlackClient } from './slack/slack-client';
+import { startApp } from './slack/app';
 
 (async () => {
-  await startHttpServer();
-  await startSlackClient();
+  await startApp();
 })();
