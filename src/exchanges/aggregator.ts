@@ -15,13 +15,11 @@ type CryptoCurrency = {
   symbol: string;
   amount: number;
   amountFiatValue: number;
-  fiatCurrency: FiatCurrency;
 };
 
 type Wallet = {
   cryptoCurrencies: CryptoCurrency[];
   fiatValue: number;
-  fiatCurrency: FiatCurrency;
 };
 
 type Exchange = 'FTX' | 'KuCoin';
@@ -40,8 +38,6 @@ type AggregatedExchangeWallet = {
 const getFtxWallet = async (): Promise<ExchangeWallet> => {
   const ftxWalletBalances: FtxWalletBalance[] = await getFtxWalletBalances();
 
-  const fiatCurrency: FiatCurrency = 'USD';
-
   const ftxWallet: ExchangeWallet = {
     exchange: 'FTX',
     wallet: {
@@ -50,14 +46,12 @@ const getFtxWallet = async (): Promise<ExchangeWallet> => {
           symbol: coin,
           amount: total,
           amountFiatValue: usdValue,
-          fiatCurrency,
         }),
       ),
       fiatValue: ftxWalletBalances.reduce(
         (acc: number, { usdValue }: FtxWalletBalance) => acc + usdValue,
         0,
       ),
-      fiatCurrency,
     },
   };
 
@@ -80,14 +74,12 @@ const getKucoinWallet = async (): Promise<ExchangeWallet> => {
         symbol: currency,
         amount: balance,
         amountFiatValue: balance * kucoinFiatPrices[currency],
-        fiatCurrency,
       })),
       fiatValue: kucoinAccounts.reduce(
         (acc: number, { currency, balance }: KucoinAccount) => acc
           + balance * kucoinFiatPrices[currency],
         0,
       ),
-      fiatCurrency,
     },
   };
 
@@ -117,6 +109,8 @@ const getAggregatedExchangeWallet = async (): Promise<AggregatedExchangeWallet> 
 
 export type {
   AggregatedExchangeWallet,
+  CryptoCurrency,
+  ExchangeWallet,
 };
 
 export {
