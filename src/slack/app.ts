@@ -14,7 +14,7 @@ let appOptions: AppOptions = {
 };
 
 const useSocketMode: boolean = env.SLACK_SOCKET_MODE === 'true';
-if(useSocketMode) {
+if (useSocketMode) {
   const appToken: string = env.SLACK_APP_TOKEN || '';
   appOptions = {
     ...appOptions,
@@ -30,7 +30,7 @@ app.command('/rab-wallet', async ({ command, ack, respond }) => {
 
   console.log(command);
 
-  if(userIsGranted(command.user_name)) {
+  if (userIsGranted(command.user_name)) {
     const aggregatedExchangeWallet: AggregatedExchangeWallet = await getAggregatedExchangeWallet();
     await respond(JSON.stringify(aggregatedExchangeWallet));
   } else {
@@ -43,7 +43,7 @@ const startApp = async (): Promise<void> => {
 
   const port: number = env.PORT ? parseInt(env.PORT, 10) : 3000;
   await app.start(port);
-  
+
   console.log(`⚡️ Bolt app is running on port ${port}!`);
 };
 
