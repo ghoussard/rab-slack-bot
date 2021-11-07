@@ -1,7 +1,13 @@
-import { FtxWalletBalance, getFtxWalletBalances } from './clients/ftx-client';
 import {
-  KucoinAccount, KucoinFiatPrices, getKucoinAccounts, getKucoinFiatPrices,
-} from './clients/kucoin-client';
+  WalletBalance as FtxWalletBalance,
+  getWalletBalances as getFtxWalletBalances,
+} from './clients/ftx';
+import {
+  Account as KucoinAccount,
+  FiatPrices as KucoinFiatPrices,
+  getAggregatedAccounts as getKucoinAccounts,
+  getFiatPrices as getKucoinFiatPrices,
+} from './clients/kucoin';
 
 type FiatCurrency = 'USD';
 
@@ -34,15 +40,12 @@ type AggregatedExchangeWallet = {
 const getFtxWallet = async (): Promise<ExchangeWallet> => {
   const ftxWalletBalances: FtxWalletBalance[] = await getFtxWalletBalances();
 
-  const notEmptyFtxWalletBalances: FtxWalletBalance[] = ftxWalletBalances.filter(
-    ({ total }: FtxWalletBalance) => total > 0,
-  );
   const fiatCurrency: FiatCurrency = 'USD';
 
   const ftxWallet: ExchangeWallet = {
     exchange: 'FTX',
     wallet: {
-      cryptoCurrencies: notEmptyFtxWalletBalances.map(
+      cryptoCurrencies: ftxWalletBalances.map(
         ({ coin, total, usdValue }: FtxWalletBalance): CryptoCurrency => ({
           symbol: coin,
           amount: total,
@@ -50,8 +53,8 @@ const getFtxWallet = async (): Promise<ExchangeWallet> => {
           fiatCurrency,
         }),
       ),
-      fiatValue: notEmptyFtxWalletBalances.reduce(
-        (fiatValueAcc: number, { usdValue }: FtxWalletBalance) => fiatValueAcc + usdValue,
+      fiatValue: ftxWalletBalances.reduce(
+        (acc: number, { usdValue }: FtxWalletBalance) => acc + usdValue,
         0,
       ),
       fiatCurrency,
@@ -64,44 +67,24 @@ const getFtxWallet = async (): Promise<ExchangeWallet> => {
 const getKucoinWallet = async (): Promise<ExchangeWallet> => {
   const kucoinAccounts: KucoinAccount[] = await getKucoinAccounts();
 
-  const aggregedKucoinAccounts: { [index: string]: KucoinAccount } = {};
-  kucoinAccounts.forEach(({ currency, balance }: KucoinAccount) => {
-    if (Object.keys(aggregedKucoinAccounts).includes(currency)) {
-      aggregedKucoinAccounts[currency].balance += balance;
-    } else {
-      aggregedKucoinAccounts[currency] = {
-        currency,
-        balance,
-      };
-    }
-  });
-
   const fiatCurrency: FiatCurrency = 'USD';
   const kucoinFiatPrices: KucoinFiatPrices = await getKucoinFiatPrices(
-    Object.keys(aggregedKucoinAccounts),
+    kucoinAccounts.map(({ currency }: KucoinAccount) => currency),
     fiatCurrency,
   );
-  const computeFiatValue = (aggregedKucoinAccountCurrency: string): number => {
-    const { balance } = aggregedKucoinAccounts[aggregedKucoinAccountCurrency];
-    const price = kucoinFiatPrices[aggregedKucoinAccountCurrency];
-
-    return balance * price;
-  };
 
   const kucoinWallet: ExchangeWallet = {
     exchange: 'KuCoin',
     wallet: {
-      cryptoCurrencies: Object.keys(aggregedKucoinAccounts).map(
-        (aggregedKucoinAccountCurrency: string): CryptoCurrency => ({
-          symbol: aggregedKucoinAccountCurrency,
-          amount: aggregedKucoinAccounts[aggregedKucoinAccountCurrency].balance,
-          amountFiatValue: computeFiatValue(aggregedKucoinAccountCurrency),
-          fiatCurrency,
-        }),
-      ),
-      fiatValue: Object.keys(aggregedKucoinAccounts).reduce(
-        (fiatValueAcc: number, aggregedKucoinAccountCurrency: string) => fiatValueAcc
-          + computeFiatValue(aggregedKucoinAccountCurrency),
+      cryptoCurrencies: kucoinAccounts.map(({ currency, balance }: KucoinAccount) => ({
+        symbol: currency,
+        amount: balance,
+        amountFiatValue: balance * kucoinFiatPrices[currency],
+        fiatCurrency,
+      })),
+      fiatValue: kucoinAccounts.reduce(
+        (acc: number, { currency, balance }: KucoinAccount) => acc
+          + balance * kucoinFiatPrices[currency],
         0,
       ),
       fiatCurrency,
@@ -117,7 +100,7 @@ const getAggregatedExchangeWallet = async (): Promise<AggregatedExchangeWallet> 
 
   const exchangeWallets: ExchangeWallet[] = [ftxWallet, kucoinWallet];
   const fiatValue: number = exchangeWallets.reduce(
-    (fiatValueAcc: number, { wallet }: ExchangeWallet) => fiatValueAcc + wallet.fiatValue,
+    (acc: number, { wallet }: ExchangeWallet) => acc + wallet.fiatValue,
     0,
   );
 

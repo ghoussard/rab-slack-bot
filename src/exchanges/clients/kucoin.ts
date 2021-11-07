@@ -2,8 +2,8 @@ import { env } from 'process';
 import { createHmac, Hmac } from 'crypto';
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios';
 
-type KucoinApiMethod = 'GET';
-type KucoinApiRequestParams = {[param: string]: string};
+type ApiMethod = 'GET';
+type ApiRequestParams = {[param: string]: string};
 
 const encryptString = (stringToEncrypt: string): string => {
     const apiSecret: string = env.KUCOIN_API_SECRET || '';
@@ -12,7 +12,7 @@ const encryptString = (stringToEncrypt: string): string => {
     return hmac.digest('base64');
 }
 
-const constructHeaders = (path: string, method: KucoinApiMethod): AxiosRequestHeaders => {
+const constructHeaders = (path: string, method: ApiMethod): AxiosRequestHeaders => {
     const timestamp: number = (new Date()).getTime();
     const signature: string = encryptString(`${timestamp}${method}${path}`);
     const apiKey: string = env.KUCOIN_API_KEY || '';
@@ -28,11 +28,11 @@ const constructHeaders = (path: string, method: KucoinApiMethod): AxiosRequestHe
     }
 }
 
-const get = async (resource: string, params?: KucoinApiRequestParams): Promise<any> => {
+const get = async (resource: string, params?: ApiRequestParams): Promise<any> => {
     const baseUrl: string = env.KUCOIN_API_BASE_URL || '';
     const path: string = `/api/v1/${resource}`;
     const url: string = `${baseUrl}${path}`;
-    const method: KucoinApiMethod = 'GET';
+    const method: ApiMethod = 'GET';
     const headers: AxiosRequestHeaders = constructHeaders(path, method);
 
     const requestConfig: AxiosRequestConfig = {
@@ -55,12 +55,12 @@ const get = async (resource: string, params?: KucoinApiRequestParams): Promise<a
     }
 }
 
-type KucoinAccount = {
+type Account = {
     currency: string;
     balance: number;
 }
 
-const getKucoinAccounts = async (): Promise<KucoinAccount[]> => {
+const getAccounts = async (): Promise<Account[]> => {
     const rawAccounts: any = await get('accounts');
 
     return rawAccounts.map(({currency, balance}: any) => ({
@@ -69,15 +69,34 @@ const getKucoinAccounts = async (): Promise<KucoinAccount[]> => {
     }));
 }
 
-type KucoinFiatCurrency = 'USD';
+const getAggregatedAccounts = async (): Promise<Account[]> => {
+    const accounts: Account[] = await getAccounts();
 
-type KucoinFiatPrices = { 
+    const indexedByCurencyAccounts: { [index: string]: Account } = {};
+    accounts.forEach(({ currency, balance }: Account) => {
+      if (Object.keys(indexedByCurencyAccounts).includes(currency)) {
+        indexedByCurencyAccounts[currency].balance += balance;
+      } else {
+        indexedByCurencyAccounts[currency] = {
+          currency,
+          balance,
+        };
+      }
+    });
+
+    return Object.values(indexedByCurencyAccounts);
+}
+
+
+type FiatCurrency = 'USD';
+
+type FiatPrices = { 
     [currency: string]: number; 
 };
 
-const getKucoinFiatPrices = async (cryptoCurrencySymbols: string[] = [], fiatCurrency: KucoinFiatCurrency = 'USD'): Promise<KucoinFiatPrices> => {
-    const params: KucoinApiRequestParams = {
-        base: fiatCurrency,
+const getFiatPrices = async (cryptoCurrencySymbols: string[] = [], FiatCurrency: FiatCurrency = 'USD'): Promise<FiatPrices> => {
+    const params: ApiRequestParams = {
+        base: FiatCurrency,
     };
 
     if(cryptoCurrencySymbols.length > 0) {
@@ -86,19 +105,20 @@ const getKucoinFiatPrices = async (cryptoCurrencySymbols: string[] = [], fiatCur
 
     const rawFiatPrices: any = await get('prices', params);
 
-    const fiatPrices: KucoinFiatPrices = {};
+    const fiatPrices: FiatPrices = {};
     Object.keys(rawFiatPrices).forEach((symbol: string) => {
         fiatPrices[symbol] = parseFloat(rawFiatPrices[symbol]);
     });
+    
     return fiatPrices;
 }
 
 export type {
-    KucoinAccount,
-    KucoinFiatPrices,
+    Account,
+    FiatPrices,
 }
 
 export {
-    getKucoinAccounts,
-    getKucoinFiatPrices,
+    getAggregatedAccounts,
+    getFiatPrices,
 }
