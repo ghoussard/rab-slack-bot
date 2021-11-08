@@ -63,10 +63,12 @@ type Account = {
 const getAccounts = async (): Promise<Account[]> => {
     const rawAccounts: any = await get('accounts');
 
-    return rawAccounts.map(({currency, balance}: any) => ({
-        currency,
-        balance: parseFloat(balance),
-    }));
+    return rawAccounts
+        .filter(({ balance }: any) => 0 < parseFloat(balance))
+        .map(({currency, balance}: any) => ({
+            currency,
+            balance: parseFloat(balance),
+        }));
 }
 
 const getAggregatedAccounts = async (): Promise<Account[]> => {
