@@ -1,0 +1,24 @@
+_metadata:
+  major_version: 1
+  minor_version: 1
+display_information:
+  name: "RAB Bot"
+  background_color: "#85bb65"
+features:
+  bot_user:
+    display_name: "RAB Bot"
+    always_online: false
+  slash_commands:
+    - command: /rab-wallet
+      url: https://example.com/slack/events
+      description: Show RAB fund wallet
+      should_escape: false
+oauth_config:
+  scopes:
+    bot:
+      - commands
+      - chat:write
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
