@@ -60,7 +60,7 @@ const getWalletBalances = async (): Promise<WalletBalance[]> => {
     const rawWalletBalances: any = await get('wallet/balances');
 
     const walletBalances: WalletBalance[] = rawWalletBalances
-        .filter(({ total }: any): any => total > 0)
+        .filter(({ total }: any): any => 0 < total)
         .map(({ coin, total, usdValue }: any): WalletBalance => ({ coin, total, usdValue }));
 
     return walletBalances;
