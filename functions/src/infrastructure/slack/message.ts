@@ -1,4 +1,4 @@
-import { RespondArguments, SectionBlock } from "@slack/bolt";
+import { App, RespondArguments, SectionBlock } from "@slack/bolt";
 import { RabWallet } from "../../domain/rabWallet";
 
 const createRabWalletSummaryMessage = ({
@@ -55,4 +55,18 @@ const createRabWalletSummaryMessage = ({
   };
 };
 
-export { createRabWalletSummaryMessage };
+const sendRabWalletSummaryMessageToChannel = async (
+  app: App,
+  channel: string,
+  rabWallet: RabWallet
+): Promise<void> => {
+  const message = {
+    channel,
+    text: "RAB Fund Wallet",
+    ...createRabWalletSummaryMessage(rabWallet),
+  };
+
+  await app.client.chat.postMessage(message);
+};
+
+export { createRabWalletSummaryMessage, sendRabWalletSummaryMessageToChannel };

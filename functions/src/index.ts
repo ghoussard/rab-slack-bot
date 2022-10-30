@@ -1,18 +1,19 @@
-import { onRequest } from "firebase-functions/v2/https";
+import { https, scheduler } from "firebase-functions/v2";
 import { defineString } from "firebase-functions/params";
+import { RabWallet } from "./domain/rabWallet";
 import {
   handleGetRabWallet,
   createExchangeWalletsFetcher,
 } from "./application/getRabWallet";
 import {
   createRabWalletSummaryMessage,
-  setUpApp,
+  createSlackApp,
+  sendRabWalletSummaryMessageToChannel,
 } from "./infrastructure/slack";
 import {
   createKucoinWalletFetcher,
   createFtxWalletFetcher,
 } from "./infrastructure/exchangeWalletFetcher";
-import { RabWallet } from "./domain/rabWallet";
 
 const signingSecret = defineString("SLACK_SIGNING_SECRET");
 const botToken = defineString("SLACK_BOT_TOKEN");
@@ -27,14 +28,16 @@ const kucoinApiKey = defineString("KUCOIN_API_KEY");
 const kucoinApiSecret = defineString("KUCOIN_API_SECRET");
 const kucoinApiPassphrase = defineString("KUCOIN_API_PASSPHRASE");
 
-const slackRabMembersHandles = defineString("SLACK_RAB_MEMBERS_HANDLE", {
+const rabMembersHandles = defineString("SLACK_RAB_MEMBERS_HANDLE", {
   default: "[]",
 });
 
+const rabChannel = defineString("SLACK_RAB_CHANNEL");
+
 const isRabMember = (
-  rabMembersHandles: string[],
+  rabMembers: string[],
   commandAuthorHandle: string
-): boolean => rabMembersHandles.includes(commandAuthorHandle);
+): boolean => rabMembers.includes(commandAuthorHandle);
 
 const getRabWallet = async (
   ftxApiBaseUrl: string,
@@ -68,15 +71,18 @@ const getRabWallet = async (
   return handleGetRabWallet(exchangeWalletsFetcher)();
 };
 
-export const handleslackcommand = onRequest((request, response) => {
-  const [app, receiver] = setUpApp(signingSecret.value(), botToken.value());
+export const handleslackcommand = https.onRequest((request, response) => {
+  const [app, receiver] = createSlackApp(
+    signingSecret.value(),
+    botToken.value()
+  );
 
   app.command("/rab-wallet", async ({ ack, command, respond }) => {
     await ack();
 
-    const rabMembersHandles = JSON.parse(slackRabMembersHandles.value());
+    const rabMembers = JSON.parse(rabMembersHandles.value());
 
-    if (!isRabMember(rabMembersHandles, command.user_name)) {
+    if (!isRabMember(rabMembers, command.user_name)) {
       await respond("Sorry, only RAB members have access to RAB fund wallet!");
     }
 
@@ -98,3 +104,30 @@ export const handleslackcommand = onRequest((request, response) => {
 
   receiver.requestHandler(request, response);
 });
+
+export const sendrabwallettoslackrabchannel = scheduler.onSchedule(
+  {
+    schedule: "55 09 * * *",
+    timeZone: "Europe/Paris",
+  },
+  async () => {
+    const [app] = createSlackApp(signingSecret.value(), botToken.value());
+
+    const rabWallet = await getRabWallet(
+      ftxApiBaseUrl.value(),
+      ftxApiKey.value(),
+      ftxApiSecret.value(),
+      ftxSubaccount.value(),
+      kucoinApiBaseUrl.value(),
+      kucoinApiKey.value(),
+      kucoinApiSecret.value(),
+      kucoinApiPassphrase.value()
+    );
+
+    await sendRabWalletSummaryMessageToChannel(
+      app,
+      rabChannel.value(),
+      rabWallet
+    );
+  }
+);

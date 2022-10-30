@@ -1,6 +1,6 @@
 import { App, ExpressReceiver } from "@slack/bolt";
 
-const setUpApp = (
+const createSlackApp = (
   signingSecret: string,
   botToken: string,
   endpoints = "/slack/events"
@@ -19,4 +19,4 @@ const setUpApp = (
   return [app, receiver];
 };
 
-export { setUpApp };
+export { createSlackApp };

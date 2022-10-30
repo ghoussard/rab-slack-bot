@@ -4,8 +4,8 @@ import axios, {
   AxiosResponse,
   RawAxiosRequestHeaders,
 } from "axios";
-import { ExchangeWalletFetcherInterface } from "../../application/getRabWallet";
 import { ExchangeWallet } from "../../domain/rabWallet";
+import { ExchangeWalletFetcherInterface } from "../../application/getRabWallet";
 
 type ApiGetParams = { [param: string]: string };
 
