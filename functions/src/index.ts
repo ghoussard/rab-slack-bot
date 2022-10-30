@@ -12,6 +12,7 @@ import {
   createKucoinWalletFetcher,
   createFtxWalletFetcher,
 } from "./infrastructure/exchangeWalletFetcher";
+import { RabWallet } from "./domain/rabWallet";
 
 const signingSecret = defineString("SLACK_SIGNING_SECRET");
 const botToken = defineString("SLACK_BOT_TOKEN");
@@ -26,32 +27,69 @@ const kucoinApiKey = defineString("KUCOIN_API_KEY");
 const kucoinApiSecret = defineString("KUCOIN_API_SECRET");
 const kucoinApiPassphrase = defineString("KUCOIN_API_PASSPHRASE");
 
+const slackRabMembersHandles = defineString("SLACK_RAB_MEMBERS_HANDLE", {
+  default: "[]",
+});
+
+const isRabMember = (
+  rabMembersHandles: string[],
+  commandAuthorHandle: string
+): boolean => rabMembersHandles.includes(commandAuthorHandle);
+
+const getRabWallet = async (
+  ftxApiBaseUrl: string,
+  ftxApiKey: string,
+  ftxApiSecret: string,
+  ftxSubaccount: string,
+  kucoinApiBaseUrl: string,
+  kucoinApiKey: string,
+  kucoinApiSecret: string,
+  kucoinApiPassphrase: string
+): Promise<RabWallet> => {
+  const ftxWalletFetcher = createFtxWalletFetcher(
+    ftxApiBaseUrl,
+    ftxApiKey,
+    ftxApiSecret,
+    ftxSubaccount
+  );
+
+  const kucoinWalletFetcher = createKucoinWalletFetcher(
+    kucoinApiBaseUrl,
+    kucoinApiKey,
+    kucoinApiSecret,
+    kucoinApiPassphrase
+  );
+
+  const exchangeWalletsFetcher = createExchangeWalletsFetcher([
+    ftxWalletFetcher,
+    kucoinWalletFetcher,
+  ]);
+
+  return handleGetRabWallet(exchangeWalletsFetcher)();
+};
+
 export const handleslackcommand = onRequest((request, response) => {
   const [app, receiver] = setUpApp(signingSecret.value(), botToken.value());
 
-  app.command("/rab-wallet", async ({ ack, respond }) => {
+  app.command("/rab-wallet", async ({ ack, command, respond }) => {
     await ack();
 
-    const ftxWalletFetcher = createFtxWalletFetcher(
+    const rabMembersHandles = JSON.parse(slackRabMembersHandles.value());
+
+    if (!isRabMember(rabMembersHandles, command.user_name)) {
+      await respond("Sorry, only RAB members have access to RAB fund wallet!");
+    }
+
+    const rabWallet = await getRabWallet(
       ftxApiBaseUrl.value(),
       ftxApiKey.value(),
       ftxApiSecret.value(),
-      ftxSubaccount.value()
-    );
-
-    const kucoinWalletFetcher = createKucoinWalletFetcher(
+      ftxSubaccount.value(),
       kucoinApiBaseUrl.value(),
       kucoinApiKey.value(),
       kucoinApiSecret.value(),
       kucoinApiPassphrase.value()
     );
-
-    const exchangeWalletsFetcher = createExchangeWalletsFetcher([
-      ftxWalletFetcher,
-      kucoinWalletFetcher,
-    ]);
-
-    const rabWallet = await handleGetRabWallet(exchangeWalletsFetcher)();
 
     const response = createRabWalletSummaryMessage(rabWallet);
 
