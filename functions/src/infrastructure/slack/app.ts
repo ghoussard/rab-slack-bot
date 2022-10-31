@@ -1,4 +1,4 @@
-import { App, ExpressReceiver } from "@slack/bolt";
+import { App, ExpressReceiver, RespondArguments } from "@slack/bolt";
 
 const createSlackApp = (
   signingSecret: string,
@@ -19,4 +19,22 @@ const createSlackApp = (
   return [app, receiver];
 };
 
-export { createSlackApp };
+const sendMessageToChannel = (
+  app: App
+): ((
+  channel: string,
+  text: string,
+  args: RespondArguments
+) => Promise<void>) => {
+  return async (channel: string, text: string, args: RespondArguments) => {
+    const message = {
+      channel,
+      text,
+      ...args,
+    };
+
+    await app.client.chat.postMessage(message);
+  };
+};
+
+export { createSlackApp, sendMessageToChannel };
