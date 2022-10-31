@@ -21,19 +21,19 @@ type FiatPrices = {
 class KucoinWalletFetcher implements ExchangeWalletFetcherInterface {
   private readonly apiBaseUrl: string;
   private readonly apiKey: string;
-  private readonly apiSecret: string;
   private readonly apiPassphrase: string;
+  private readonly apiSecret: string;
 
   public constructor(
     apiBaseUrl: string,
     apiKey: string,
-    apiSecret: string,
-    apiPassphrase: string
+    apiPassphrase: string,
+    apiSecret: string
   ) {
     this.apiBaseUrl = apiBaseUrl;
     this.apiKey = apiKey;
-    this.apiSecret = apiSecret;
     this.apiPassphrase = apiPassphrase;
+    this.apiSecret = apiSecret;
   }
 
   public async fetch(): Promise<ExchangeWallet> {
@@ -170,8 +170,8 @@ class KucoinWalletFetcher implements ExchangeWalletFetcherInterface {
 const createKucoinWalletFetcher = (
   apiBaseUrl: string,
   apiKey: string,
-  apiSecret: string,
-  apiPassphrase: string
-) => new KucoinWalletFetcher(apiBaseUrl, apiKey, apiSecret, apiPassphrase);
+  apiPassphrase: string,
+  apiSecret: string
+) => new KucoinWalletFetcher(apiBaseUrl, apiKey, apiPassphrase, apiSecret);
 
 export { createKucoinWalletFetcher };
