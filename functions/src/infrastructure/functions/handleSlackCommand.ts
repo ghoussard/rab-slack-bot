@@ -2,7 +2,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import { getRabWallet, isRabMember } from "./common";
 import {
   slackBotToken,
-  slackRabMembersHandles,
+  slackRabMemberHandles,
   slackSigningSecret,
   ftxApiBaseUrl,
   ftxApiKey,
@@ -24,7 +24,7 @@ export const handleslackcommand = onRequest((request, response) => {
   app.command("/rab-wallet", async ({ ack, command, respond }) => {
     await ack();
 
-    const rabMembers = JSON.parse(slackRabMembersHandles.value());
+    const rabMembers = JSON.parse(slackRabMemberHandles.value());
 
     if (!isRabMember(rabMembers, command.user_name)) {
       await respond("Sorry, only RAB members have access to RAB fund wallet!");

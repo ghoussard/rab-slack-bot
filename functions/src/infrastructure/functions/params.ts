@@ -2,7 +2,7 @@ import { defineString } from "firebase-functions/params";
 
 const slackBotToken = defineString("SLACK_BOT_TOKEN");
 const slackRabChannel = defineString("SLACK_RAB_CHANNEL");
-const slackRabMembersHandles = defineString("SLACK_RAB_MEMBERS_HANDLE", {
+const slackRabMemberHandles = defineString("SLACK_RAB_MEMBER_HANDLES", {
   default: "[]",
 });
 const slackSigningSecret = defineString("SLACK_SIGNING_SECRET");
@@ -20,7 +20,7 @@ const kucoinApiPassphrase = defineString("KUCOIN_API_PASSPHRASE");
 export {
   slackBotToken,
   slackRabChannel,
-  slackRabMembersHandles,
+  slackRabMemberHandles,
   slackSigningSecret,
   ftxApiBaseUrl,
   ftxApiKey,
