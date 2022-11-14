@@ -12,9 +12,15 @@ class ExchangeWalletsFetcher implements ExchangeWalletsFetcherInterface {
     this.fetchers = fetchers;
   }
 
-  public fetch(): Promise<ExchangeWallet[]> {
-    const fetchPromises = this.fetchers.map((fetcher) => fetcher.fetch());
-    return Promise.all(fetchPromises);
+  public async fetch(): Promise<ExchangeWallet[]> {
+    const wallets = [];
+    for (const fetcher of this.fetchers) {
+      try {
+        wallets.push(await fetcher.fetch());
+        /* eslint-disable no-empty */
+      } catch (e) {}
+    }
+    return wallets;
   }
 }
 
